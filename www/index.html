@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>StableView</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- socketio -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        /* full size fill image in body */
+        .viewer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+
+        #overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+        }
+    </style>
+</head>
+<body>
+    <img src="" alt="" id="image" class="viewer">
+    <video id="video" class="viewer" loop></video>
+    <div id="overlay" class="viewer"> Click to start</div>
+    <script>
+
+        var STROBE = false;
+        var STROBE_INTERVAL = 100;
+
+        // click on overlay to hide it and start socketio
+        document.querySelector('#overlay').addEventListener('click', function() {
+            document.querySelector('#overlay').style.display = 'none';
+
+            // socketio
+            var socket = io();
+            
+            // new image
+            socket.on('new', function(data) {
+
+                // video
+                if (data.includes('.mp4')) {
+                    console.log('new video:', data);
+                    // hide image
+                    document.querySelector('img').style.display = 'none';
+                    // show video
+                    document.querySelector('video').src = '/media/'+data;
+                    document.querySelector('video').style.display = 'block';
+                    document.querySelector('video').play();
+                    return;
+                }
+
+                // image
+                else {
+                    // hide video
+                    document.querySelector('video').style.display = 'none';
+
+                    console.log('new image:', data);
+                    document.querySelector('img').src = '/media/'+data;
+                    // show image
+                    document.querySelector('img').style.display = 'block';
+                    if (STROBE)
+                        setTimeout(() => {
+                            // hide image
+                            document.querySelector('img').style.display = 'none';
+                        }, STROBE_INTERVAL);
+                }
+            });
+        });
+
+        document.querySelector('#overlay').style.display = 'flex';
+
+
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        
+        // screen target
+        const screen = urlParams.get('screen')
+        console.log('screen:', screen)
+        if (screen == 'led') {
+            // img align left with given width and height
+            document.querySelector('.viewer').style.objectFit = 'fill'
+            document.querySelector('.viewer').style.width = '512px'
+            document.querySelector('.viewer').style.height = '256px'
+            document.querySelector('.viewer').style.left = '-128px'
+            document.querySelector('.viewer').style.opacity = '0.5'
+        }
+    </script>
+</body>
+</html>
